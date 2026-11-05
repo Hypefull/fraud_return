@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import joblib
+import pandas as pd
 import streamlit as st
 
 # Konfigurasi halaman
@@ -13,6 +17,53 @@ def h(s: str) -> str:
     Penyebab HTML tampil sebagai kode di Streamlit: baris yang diawali 4+ spasi
     (atau baris kosong) dianggap code block oleh Markdown."""
     return " ".join(line.strip() for line in s.strip().splitlines())
+
+
+# ----------------- LOAD MODEL (sekali saja, di-cache) -----------------
+MODEL_PATH = Path(__file__).parent / "return_abuse_detector_model.joblib"
+
+# Warna & penjelasan tiap kelas hasil model
+CLASS_INFO = {
+    "Legitimate":        {"color": "#16a34a", "bg": "#dcfce7", "desc": "Pola retur wajar dan tidak menunjukkan indikasi penyalahgunaan."},
+    "Fraudulent Return": {"color": "#dc2626", "bg": "#fee2e2", "desc": "Pola mengarah ke pengembalian curang (mis. tracking tidak valid, dispute berulang)."},
+    "Policy Abuser":     {"color": "#d97706", "bg": "#fef3c7", "desc": "Memanfaatkan celah kebijakan retur secara berulang."},
+    "Wardrobing":        {"color": "#7c3aed", "bg": "#ede9fe", "desc": "Indikasi membeli lalu mengembalikan barang setelah dipakai."},
+}
+
+FEATURE_LABELS = {
+    "return_rate_pct": "Return rate (%)",
+    "total_returns_lifetime": "Total returns",
+    "customer_support_contacts": "Support contacts",
+    "days_to_return": "Days to return",
+    "previous_dispute_count": "Previous disputes",
+    "wishlist_to_cart_time_hrs": "Wishlist → cart (hrs)",
+    "tracking_number_valid": "Tracking valid",
+    "refund_amount_requested_usd": "Refund amount (USD)",
+    "avg_order_value_usd": "Avg order value (USD)",
+    "total_orders_lifetime": "Total orders",
+}
+
+
+@st.cache_resource(show_spinner="Memuat model AI...")
+def load_model():
+    if not MODEL_PATH.exists():
+        return None, f"File model tidak ditemukan: {MODEL_PATH.name} (taruh sefolder dengan main.py)"
+    try:
+        return joblib.load(MODEL_PATH), None
+    except Exception as e:  # versi scikit-learn tidak cocok, file rusak, dll
+        return None, f"Gagal memuat model: {e}"
+
+
+model, model_error = load_model()
+
+
+def predict_case(features: dict):
+    """Jalankan model -> (label, confidence, {kelas: probabilitas})"""
+    X = pd.DataFrame([features])[list(model.feature_names_in_)]  # urutan kolom harus sama dengan saat training
+    proba = model.predict_proba(X)[0]
+    probs = dict(zip(model.classes_, proba))
+    label = max(probs, key=probs.get)
+    return label, float(probs[label]), probs
 
 
 # ----------------- CSS -----------------
@@ -75,8 +126,8 @@ st.markdown("""
 /* ---------- History table ---------- */
 .hist-scroll { overflow-x: auto; }
 .hist-grid {
-    display: grid; align-items: center; column-gap: 12px; min-width: 760px;
-    grid-template-columns: 1.1fr 1fr 0.8fr 0.8fr 1fr 1fr 1fr 1.3fr;
+    display: grid; align-items: center; column-gap: 12px; min-width: 860px;
+    grid-template-columns: 1.1fr 1fr 0.8fr 0.8fr 1fr 1fr 1fr 1.9fr;
 }
 .hist-head {
     padding: 10px 14px; background: #f8fafc; border-radius: 10px;
@@ -136,6 +187,13 @@ st.markdown("""
     font-size: 12px; color: #9ca3af; line-height: 1.5;
     margin-top: 16px; padding-top: 14px; border-top: 1px solid #374151;
 }
+
+/* ---------- Hasil model ---------- */
+.prob-row { margin-bottom: 10px; }
+.prob-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.prob-bg { width: 100%; height: 8px; border-radius: 8px; background: rgba(0,0,0,.08); }
+.prob-fill { height: 8px; border-radius: 8px; }
+.result-label { font-size: 20px; font-weight: 800; margin: 2px 0 4px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -294,10 +352,13 @@ if clean_menu == "Dashboard":
     else:
         rows = ""
         for item in reversed(history):
+            lbl = item.get("label", item["result"])
+            conf = item.get("confidence")
+            conf_txt = f" · {conf:.0f}%" if conf is not None else ""
             if item["result"] == "Fraudulent":
-                badge = '<span class="badge-table-fraud">⚠️ Fraudulent</span>'
+                badge = f'<span class="badge-table-fraud">⚠️ {lbl}{conf_txt}</span>'
             else:
-                badge = '<span class="badge-table-safe">✅ Low Risk</span>'
+                badge = f'<span class="badge-table-safe">✅ {lbl}{conf_txt}</span>'
             rows += (
                 '<div class="hist-grid hist-row">'
                 f'<div class="cell-case">{item["case"]}</div>'
@@ -332,7 +393,11 @@ if clean_menu == "Dashboard":
 # ======================= PREDICTION =======================
 elif clean_menu == "Prediction":
     st.markdown("## Check a return case")
-    st.caption("Enter values manually or generate a sample.")
+    st.caption("Isi data kasus retur, lalu model AI akan menganalisis pola penyalahgunaannya.")
+
+    if model is None:
+        st.error(model_error)
+        st.stop()
 
     col1, col2 = st.columns([2.1, 1], gap="large")
 
@@ -342,7 +407,7 @@ elif clean_menu == "Prediction":
 
         c1, c2 = st.columns(2)
         with c1:
-            account_age = st.number_input("ACCOUNT AGE", min_value=0, value=0, step=1, help="days")
+            account_age = st.number_input("ACCOUNT AGE", min_value=0, value=0, step=1, help="days (hanya untuk riwayat, bukan fitur model)")
         with c2:
             total_orders = st.number_input("TOTAL ORDERS", min_value=0, value=0, step=1, help="orders")
 
@@ -356,15 +421,26 @@ elif clean_menu == "Prediction":
         with c5:
             days_until_return = st.number_input("DAYS UNTIL RETURN", min_value=0, value=0, step=1, help="days")
         with c6:
-            st.markdown("<p style='margin-bottom: 5px; font-size:12px; font-weight:bold; color:#555;'>Derived return rate</p>",
-                        unsafe_allow_html=True)
+            avg_order_value = st.number_input("AVG ORDER VALUE (USD)", min_value=0.0, value=0.0, step=1.0, help="USD")
 
-            return_rate = (total_returns / total_orders) * 100 if total_orders > 0 else 0.0
-            is_high_return_rate = return_rate >= 60.0
-            is_fast_return = days_until_return <= 2
+        c7, c8 = st.columns(2)
+        with c7:
+            support_contacts = st.number_input("CUSTOMER SUPPORT CONTACTS", min_value=0, value=0, step=1, help="contacts")
+        with c8:
+            dispute_count = st.number_input("PREVIOUS DISPUTE COUNT", min_value=0, value=0, step=1, help="disputes")
 
-            box = "metric-box-danger" if (is_high_return_rate and is_fast_return) else "metric-box-normal"
-            st.markdown(f'<div class="{box}">{return_rate:.1f}%</div>', unsafe_allow_html=True)
+        c9, c10 = st.columns(2)
+        with c9:
+            wishlist_hrs = st.number_input("WISHLIST TO CART TIME (HRS)", min_value=0.0, value=0.0, step=0.5, help="hours")
+        with c10:
+            tracking_valid_label = st.selectbox("TRACKING NUMBER VALID", ["Yes", "No"], help="Apakah nomor resi valid?")
+            tracking_valid = 1 if tracking_valid_label == "Yes" else 0
+
+        st.markdown("<p style='margin-bottom: 5px; font-size:12px; font-weight:bold; color:#555;'>Derived return rate</p>",
+                    unsafe_allow_html=True)
+        return_rate = (total_returns / total_orders) * 100 if total_orders > 0 else 0.0
+        box = "metric-box-danger" if return_rate >= 60.0 else "metric-box-normal"
+        st.markdown(f'<div class="{box}">{return_rate:.1f}%</div>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -374,26 +450,42 @@ elif clean_menu == "Prediction":
             elif total_returns > total_orders:
                 st.error("Validasi gagal: Total Returns tidak boleh lebih besar dari Total Orders!")
             else:
-                if is_high_return_rate and is_fast_return:
-                    result_status = "Fraudulent"
-                    st.markdown(h(f"""
-                        <div class="high-risk-box">
-                            ⚠️ <b>ANOMALY DETECTED / HIGH RISK!</b><br>
-                            - Return rate mencapai <b>{return_rate:.1f}%</b> (di atas ambang batas 60%).<br>
-                            - Kecepatan retur sangat cepat yaitu <b>{days_until_return} hari</b> (≤ 2 hari).<br>
-                            - Total refund sebesar <b>USD {refund_amount:,.2f}</b> mengindikasikan pola pengembalian masif yang mencurigakan.
-                        </div>
-                    """), unsafe_allow_html=True)
-                else:
-                    result_status = "Low Risk"
-                    st.markdown(h(f"""
-                        <div class="low-risk-box">
-                            ✅ <b>LOW RISK</b><br>
-                            Aktivitas akun berada di bawah batas anomali (Return rate: <b>{return_rate:.1f}%</b>, Days until return: <b>{days_until_return} hari</b>).
-                        </div>
-                    """), unsafe_allow_html=True)
+                # Nama kunci HARUS sama persis dengan fitur saat model dilatih
+                features = {
+                    "return_rate_pct": return_rate,
+                    "total_returns_lifetime": total_returns,
+                    "customer_support_contacts": support_contacts,
+                    "days_to_return": days_until_return,
+                    "previous_dispute_count": dispute_count,
+                    "wishlist_to_cart_time_hrs": wishlist_hrs,
+                    "tracking_number_valid": tracking_valid,
+                    "refund_amount_requested_usd": refund_amount,
+                    "avg_order_value_usd": avg_order_value,
+                    "total_orders_lifetime": total_orders,
+                }
+                label, confidence, probs = predict_case(features)
+                is_flagged = label != "Legitimate"
+                info = CLASS_INFO.get(label, CLASS_INFO["Legitimate"])
 
-                # Simpan SEMUA field dari form Prediction
+                prob_rows = ""
+                for cls, p in sorted(probs.items(), key=lambda kv: kv[1], reverse=True):
+                    ci = CLASS_INFO.get(cls, {"color": "#64748b"})
+                    prob_rows += (
+                        f'<div class="prob-row"><div class="prob-top"><span>{cls}</span><span>{p*100:.1f}%</span></div>'
+                        f'<div class="prob-bg"><div class="prob-fill" style="width:{p*100:.1f}%; background:{ci["color"]};"></div></div></div>'
+                    )
+
+                box_cls = "high-risk-box" if is_flagged else "low-risk-box"
+                icon = "⚠️" if is_flagged else "✅"
+                st.markdown(h(f"""
+                    <div class="{box_cls}">
+                        <div style="font-size:12px; font-weight:700; letter-spacing:.5px;">{icon} HASIL ANALISIS MODEL AI</div>
+                        <div class="result-label">{label}</div>
+                        <div style="font-size:13px; margin-bottom:14px;">Confidence <b>{confidence*100:.1f}%</b> — {info["desc"]}</div>
+                        {prob_rows}
+                    </div>
+                """), unsafe_allow_html=True)
+
                 st.session_state.history_predictions.append({
                     "case": f"#RF-{len(history) + 2049}",
                     "account_age": account_age,
@@ -402,7 +494,9 @@ elif clean_menu == "Prediction":
                     "refund_amount": float(refund_amount),
                     "days_until_return": days_until_return,
                     "return_rate": round(return_rate, 1),
-                    "result": result_status,
+                    "label": label,
+                    "confidence": round(confidence * 100, 1),
+                    "result": "Fraudulent" if is_flagged else "Low Risk",
                 })
                 st.success("✨ Hasil analisis berhasil disimpan ke riwayat Dashboard!")
 
@@ -419,10 +513,10 @@ elif clean_menu == "Prediction":
                 else '<span class="val-pill pill-bad">⚠️ NEEDS ATTENTION</span>')
 
         items = ""
-        for label, ok in checks:
+        for lbl, ok in checks:
             cls = "val-ok" if ok else "val-bad"
-            icon = "✅" if ok else "❌"
-            items += f'<div class="val-item {cls}"><span>{label}</span><span>{icon}</span></div>'
+            ic = "✅" if ok else "❌"
+            items += f'<div class="val-item {cls}"><span>{lbl}</span><span>{ic}</span></div>'
 
         st.markdown(h(f"""
             <div class="val-card">
@@ -438,5 +532,46 @@ elif clean_menu == "Prediction":
 
 # ======================= MODEL INSIGHT =======================
 elif clean_menu == "Model Insight":
-    st.title("🧠 Model Insight")
-    st.write("Informasi mengenai performa model machine learning yang digunakan.")
+    st.markdown("<h2 style='margin-bottom: 0;'>🧠 Model Insight</h2>", unsafe_allow_html=True)
+    st.caption("Informasi mengenai model machine learning yang digunakan.")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if model is None:
+        st.error(model_error)
+        st.stop()
+
+    m1, m2 = st.columns([1, 1.6], gap="large")
+
+    with m1:
+        class_rows = "".join(
+            f'<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:13px;">'
+            f'<span style="width:10px; height:10px; border-radius:50%; background:{CLASS_INFO.get(c, {"color": "#64748b"})["color"]};"></span>'
+            f'<b>{c}</b></div>'
+            for c in model.classes_
+        )
+        st.markdown(h(f"""
+            <div class="dashboard-card">
+                <div class="card-title">Model summary</div>
+                <div class="card-sub" style="margin-bottom:16px;">{type(model).__name__}</div>
+                <div style="font-size:13px; margin-bottom:6px;">Jumlah fitur: <b>{model.n_features_in_}</b></div>
+                <div style="font-size:13px; margin-bottom:16px;">Jumlah pohon: <b>{getattr(model, "n_estimators", "-")}</b></div>
+                <div class="stat-label" style="margin-bottom:10px;">KELAS OUTPUT</div>
+                {class_rows}
+            </div>
+        """), unsafe_allow_html=True)
+
+    with m2:
+        imp = sorted(zip(model.feature_names_in_, model.feature_importances_), key=lambda kv: kv[1], reverse=True)
+        top = imp[0][1] if imp else 1
+        imp_rows = "".join(
+            f'<div class="prob-row"><div class="prob-top"><span>{FEATURE_LABELS.get(n, n)}</span><span>{v*100:.1f}%</span></div>'
+            f'<div class="prob-bg"><div class="prob-fill" style="width:{v/top*100:.1f}%; background:#6366f1;"></div></div></div>'
+            for n, v in imp
+        )
+        st.markdown(h(f"""
+            <div class="dashboard-card">
+                <div class="card-title">Feature importance</div>
+                <div class="card-sub" style="margin-bottom:16px;">Seberapa besar tiap fitur memengaruhi keputusan model</div>
+                {imp_rows}
+            </div>
+        """), unsafe_allow_html=True)
