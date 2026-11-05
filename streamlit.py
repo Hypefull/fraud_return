@@ -7,12 +7,59 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS untuk mempercantik tampilan
+# Custom CSS untuk Sidebar pill style, animasi, dan komponen
 st.markdown("""
     <style>
+    /* Latar belakang utama aplikasi */
     .main {
         background-color: #f8f9fa;
     }
+    
+    /* Animasi transisi fade-in saat halaman dimuat/berubah */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-container {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    /* Styling Sidebar Gelap */
+    [data-testid="stSidebar"] {
+        background-color: #0d1b2a !important;
+        padding-top: 1rem;
+    }
+    
+    /* Sembunyikan radio button bawaan streamlit dan ubah jadi card pill */
+    [data-testid="stSidebar"] .stRadio > label {
+        display: none;
+    }
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] {
+        gap: 6px;
+    }
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+        background-color: transparent;
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: #94a3b8;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+    }
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+        background-color: #1b2a4a;
+        color: #ffffff;
+    }
+    /* Styling khusus untuk menu aktif (pill background seperti gambar kanan) */
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-checked="true"] {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        border: 1px solid #334155 !important;
+        font-weight: 600;
+    }
+
+    /* Tombol Utama */
     .stButton>button {
         background-color: #6366f1;
         color: white;
@@ -25,6 +72,8 @@ st.markdown("""
         background-color: #4f46e5;
         color: white;
     }
+    
+    /* Kotak Metrik & Risiko */
     .metric-box-normal {
         background-color: #e6f4ea;
         padding: 10px;
@@ -61,23 +110,31 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Sidebar Navigasi
+# ----------------- SIDEBAR -----------------
 with st.sidebar:
-    st.markdown("### 🔄 **ReturnGuard**")
-    st.caption("AI return-risk checker")
-    st.markdown("---")
+    # Bagian Header Logo & Subtitle
+    st.markdown("""
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2px;">
+            <div style="background-color: #6366f1; padding: 6px 10px; border-radius: 10px; color: white; font-size: 16px;">🔄</div>
+            <span style="color: white; font-size: 20px; font-weight: 700;">ReturnGuard</span>
+        </div>
+        <p style="color: #94a3b8; font-size: 12px; margin-left: 2px; margin-bottom: 25px;">AI return-risk checker</p>
+    """, unsafe_allow_html=True)
     
+    # Navigasi Menu (Gaya Pill seperti gambar kanan)
     selected_menu = st.radio(
         "Navigation",
-        ["Dashboard", "Prediction", "Model Insight"],
+        ["📈 Dashboard", "✨ Prediction", "🧠 Model Insight"],
         index=1  # Default ke Prediction
     )
-    
-    st.markdown("---")
-    st.info("ℹ️ Demo mode aktif")
 
-# Konten Utama (Halaman Prediction)
-if selected_menu == "Prediction":
+# Membersihkan string menu untuk logika halaman
+clean_menu = selected_menu.split(" ")[1]
+
+# ----------------- KONTEN UTAMA DENGAN ANIMASI FADE-IN -----------------
+st.markdown('<div class="fade-in-container">', unsafe_allow_html=True)
+
+if clean_menu == "Prediction":
     st.markdown("## Check a return case")
     st.caption("Enter values manually or generate a sample.")
 
@@ -88,21 +145,21 @@ if selected_menu == "Prediction":
         st.markdown("### Customer & return features")
         st.caption("All fields are numeric and non-negative.")
 
-        # Baris 1: Account Age & Total Orders
+        # Baris 1: Account Age & Total Orders (Default = 0)
         c1, c2 = st.columns(2)
         with c1:
             account_age = st.number_input("ACCOUNT AGE", min_value=0, value=0, step=1, help="days")
         with c2:
             total_orders = st.number_input("TOTAL ORDERS", min_value=0, value=0, step=1, help="orders")
 
-        # Baris 2: Total Returns & Refund Amount
+        # Baris 2: Total Returns & Refund Amount (Default = 0)
         c3, c4 = st.columns(2)
         with c3:
             total_returns = st.number_input("TOTAL RETURNS", min_value=0, value=0, step=1, help="returns")
         with c4:
             refund_amount = st.number_input("REFUND AMOUNT (USD)", min_value=0.0, value=0.0, step=1.0, help="USD")
 
-        # Baris 3: Days Until Return & Derived Return Rate
+        # Baris 3: Days Until Return & Derived Return Rate (Default = 0)
         c5, c6 = st.columns(2)
         with c5:
             days_until_return = st.number_input("DAYS UNTIL RETURN", min_value=0, value=0, step=1, help="days")
@@ -172,10 +229,12 @@ if selected_menu == "Prediction":
             </div>
         """, unsafe_allow_html=True)
 
-elif selected_menu == "Dashboard":
+elif clean_menu == "Dashboard":
     st.title("📊 Dashboard")
     st.write("Halaman ringkasan data transaksi dan statistik keseluruhan.")
 
-elif selected_menu == "Model Insight":
+elif clean_menu == "Model Insight":
     st.title("🧠 Model Insight")
     st.write("Informasi mengenai performa model machine learning yang digunakan.")
+
+st.markdown('</div>', unsafe_allow_html=True)
