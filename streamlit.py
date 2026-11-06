@@ -1,3 +1,4 @@
+import secrets
 from pathlib import Path
 
 import joblib
@@ -66,37 +67,101 @@ def predict_case(features: dict):
     return label, float(probs[label]), probs
 
 
+CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # tanpa O/0/I/1 supaya tidak membingungkan
+
+
+def generate_case_code(existing_codes) -> str:
+    """Buat kode unik acak, mis. RG-7K3QX9. Dijamin tidak sama dengan kode yang sudah ada."""
+    existing = set(existing_codes)
+    while True:
+        code = "RG-" + "".join(secrets.choice(CODE_ALPHABET) for _ in range(6))
+        if code not in existing:
+            return code
+
+
 # ----------------- CSS -----------------
 st.markdown("""
 <style>
 .main { background-color: #f8f9fa; }
 
+/* ---------- Animasi umum ---------- */
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn    { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes navPulse { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,.55); } 100% { box-shadow: 0 0 0 16px rgba(99,102,241,0); } }
+
+/* ---------- Sidebar ---------- */
 [data-testid="stSidebar"] { background-color: #0d1b2a !important; padding-top: 1rem; }
-[data-testid="stSidebar"] .stRadio > label { display: none; }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] { gap: 6px; }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
-    background-color: transparent; border-radius: 10px; padding: 10px 14px;
-    color: #94a3b8; font-weight: 500; width: 100%;
-    transition: all 0.2s ease-in-out; border: 1px solid transparent;
+[data-testid="stSidebar"] div[role="radiogroup"] { gap: 10px; }
+
+/* tiap menu = button box */
+[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    position: relative; overflow: hidden; width: 100%; box-sizing: border-box;
+    background: linear-gradient(145deg, #16233a 0%, #1b2a4a 100%);
+    border: 1px solid #263552; border-radius: 14px;
+    padding: 14px 16px; margin: 0;
+    color: #94a3b8; font-weight: 600;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .25s ease, background .25s ease,
+                border-color .25s ease, color .25s ease;
 }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover { background-color: #1b2a4a; color: #ffffff; }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-checked="true"] {
-    background-color: #1e293b !important; color: #ffffff !important;
-    border: 1px solid #334155 !important; font-weight: 600;
+/* sembunyikan bulatan radio bawaan */
+[data-testid="stSidebar"] div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none !important; }
+[data-testid="stSidebar"] div[role="radiogroup"] > label > div:first-child { display: none; }
+[data-testid="stSidebar"] div[role="radiogroup"] > label p { font-size: 15px; color: inherit; margin: 0; }
+
+/* hover */
+[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+    transform: translateX(6px);
+    border-color: #6366f1; color: #ffffff;
+    box-shadow: 0 6px 18px rgba(99,102,241,.25);
+}
+/* ditekan */
+[data-testid="stSidebar"] div[role="radiogroup"] > label:active {
+    transform: scale(.95);
+}
+/* menu aktif */
+[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked),
+[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    border-color: #a5b4fc !important; color: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(99,102,241,.45);
+    transform: translateX(6px);
+    animation: navPulse .6s ease-out;
 }
 
+/* ---------- Tombol utama + ripple ---------- */
 .stButton>button {
-    background-color: #6366f1; color: white; font-weight: bold;
-    border-radius: 8px; width: 100%; padding: 0.6rem;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+    color: white; font-weight: bold; border: none;
+    border-radius: 10px; width: 100%; padding: 0.6rem;
+    transition: transform .18s ease, box-shadow .25s ease, filter .25s ease;
 }
-.stButton>button:hover { background-color: #4f46e5; color: white; }
+.stButton>button:hover {
+    color: white; transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99,102,241,.45); filter: brightness(1.08);
+}
+.stButton>button:active { transform: translateY(0) scale(.95); box-shadow: 0 2px 6px rgba(99,102,241,.4); }
+.stButton>button:focus:not(:active) { color: white; }
+/* efek ripple saat diklik */
+.stButton>button::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, #ffffff 10%, transparent 10.01%);
+    background-repeat: no-repeat; background-position: 50%;
+    transform: scale(10); opacity: 0;
+    transition: transform .5s, opacity 1s;
+}
+.stButton>button:active::after { transform: scale(0); opacity: .35; transition: 0s; }
 
 /* ---------- Cards ---------- */
 .dashboard-card {
     background-color: #ffffff; padding: 22px; border-radius: 16px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #f1f5f9;
     color: #0f172a; height: 100%; box-sizing: border-box;
+    animation: fadeUp .45s ease both;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
+.dashboard-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15,23,42,.10); }
 .card-title { font-size: 16px; font-weight: 700; color: #0f172a; }
 .card-sub { font-size: 12px; color: #64748b; }
 .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
@@ -133,7 +198,8 @@ st.markdown("""
     padding: 10px 14px; background: #f8fafc; border-radius: 10px;
     font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: .5px; text-transform: uppercase;
 }
-.hist-row { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
+.hist-row { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; transition: background .2s; }
+.hist-row:hover { background: #f8fafc; }
 .hist-row:last-child { border-bottom: none; }
 .hist-row .cell-case { font-weight: 700; color: #0f172a; }
 .hist-empty { text-align: center; color: #94a3b8; font-size: 13px; padding: 28px 0 10px 0; }
@@ -159,16 +225,19 @@ st.markdown("""
 .high-risk-box {
     background-color: #fde8e8; padding: 15px; border-radius: 10px;
     border-left: 5px solid #dc2626; color: #9b1c1c; margin-top: 15px;
+    animation: popIn .45s ease both;
 }
 .low-risk-box {
     background-color: #def7ec; padding: 15px; border-radius: 10px;
     border-left: 5px solid #03543f; color: #03543f; margin-top: 15px;
+    animation: popIn .45s ease both;
 }
 
 /* ---------- Validation panel ---------- */
 .val-card {
     background: linear-gradient(160deg, #111827 0%, #0f172a 100%);
     padding: 24px; border-radius: 16px; color: white; border: 1px solid #1f2937;
+    animation: fadeUp .45s ease both;
 }
 .val-pill {
     display: inline-block; padding: 4px 12px; border-radius: 20px;
@@ -194,6 +263,18 @@ st.markdown("""
 .prob-bg { width: 100%; height: 8px; border-radius: 8px; background: rgba(0,0,0,.08); }
 .prob-fill { height: 8px; border-radius: 8px; }
 .result-label { font-size: 20px; font-weight: 800; margin: 2px 0 4px 0; }
+
+/* ---------- Detail customer (dialog) ---------- */
+.detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.detail-case { font-size: 22px; font-weight: 800; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.detail-item {
+    background: rgba(148,163,184,.12); border-radius: 10px; padding: 10px 14px;
+    animation: fadeUp .4s ease both;
+}
+.detail-item small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .5px; opacity: .65; text-transform: uppercase; }
+.detail-item b { font-size: 16px; }
+.detail-section { font-size: 12px; font-weight: 700; letter-spacing: .5px; opacity: .65; margin: 6px 0 10px 0; text-transform: uppercase; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -202,6 +283,49 @@ if "history_predictions" not in st.session_state:
     st.session_state.history_predictions = []
 
 history = st.session_state.history_predictions
+
+def _render_detail(item: dict):
+    """Isi popup detail customer: semua kriteria yang diinput di halaman Prediction."""
+    feats = item.get("features", {})
+    is_flagged = item["result"] == "Fraudulent"
+    badge_cls = "badge-table-fraud" if is_flagged else "badge-table-safe"
+    icon = "⚠️" if is_flagged else "✅"
+    info = CLASS_INFO.get(item.get("label", ""), CLASS_INFO["Legitimate"])
+
+    def fmt(key, val):
+        if key == "tracking_number_valid":
+            return "Yes" if val else "No"
+        if key == "return_rate_pct":
+            return f"{float(val):.1f}%"
+        if key in ("refund_amount_requested_usd", "avg_order_value_usd"):
+            return f"${float(val):,.2f}"
+        return f"{val:g}" if isinstance(val, float) else str(val)
+
+    items = f'<div class="detail-item"><small>Account age</small><b>{item["account_age"]} days</b></div>'
+    for key, label in FEATURE_LABELS.items():
+        if key in feats:
+            items += f'<div class="detail-item"><small>{label}</small><b>{fmt(key, feats[key])}</b></div>'
+
+    probs_html = ""
+    for cls, p in sorted(item.get("probs", {}).items(), key=lambda kv: kv[1], reverse=True):
+        ci = CLASS_INFO.get(cls, {"color": "#64748b"})
+        probs_html += (
+            f'<div class="prob-row"><div class="prob-top"><span>{cls}</span><span>{p*100:.1f}%</span></div>'
+            f'<div class="prob-bg"><div class="prob-fill" style="width:{p*100:.1f}%; background:{ci["color"]};"></div></div></div>'
+        )
+
+    st.markdown(h(f"""
+        <div class="detail-head">
+            <div class="detail-case">{item["case"]}</div>
+            <span class="{badge_cls}">{icon} {item.get("label", item["result"])} · {item.get("confidence", 0):.0f}%</span>
+        </div>
+        <div style="font-size:13px; margin-bottom:16px; opacity:.8;">{info["desc"]}</div>
+        <div class="detail-section">Customer & return features</div>
+        <div class="detail-grid">{items}</div>
+        <div class="detail-section">Probabilitas tiap kelas</div>
+        {probs_html}
+    """), unsafe_allow_html=True)
+
 
 # ----------------- SIDEBAR -----------------
 with st.sidebar:
@@ -215,8 +339,9 @@ with st.sidebar:
 
     selected_menu = st.radio(
         "Navigation",
-        ["📈 Dashboard", "✨ Prediction", "🧠 Model Insight"],
-        index=0
+        ["📈 Dashboard", "✨ Prediction", "🔍 Customer Detail", "🧠 Model Insight"],
+        index=0,
+        label_visibility="collapsed",
     )
 
 clean_menu = selected_menu.split(" ", 1)[1]
@@ -390,6 +515,7 @@ if clean_menu == "Dashboard":
         </div>
     """), unsafe_allow_html=True)
 
+
 # ======================= PREDICTION =======================
 elif clean_menu == "Prediction":
     st.markdown("## Check a return case")
@@ -486,8 +612,9 @@ elif clean_menu == "Prediction":
                     </div>
                 """), unsafe_allow_html=True)
 
+                new_code = generate_case_code(it["case"] for it in history)
                 st.session_state.history_predictions.append({
-                    "case": f"#RF-{len(history) + 2049}",
+                    "case": new_code,
                     "account_age": account_age,
                     "total_orders": total_orders,
                     "total_returns": total_returns,
@@ -497,8 +624,11 @@ elif clean_menu == "Prediction":
                     "label": label,
                     "confidence": round(confidence * 100, 1),
                     "result": "Fraudulent" if is_flagged else "Low Risk",
+                    # data lengkap untuk popup detail customer
+                    "features": features,
+                    "probs": {str(k): float(v) for k, v in probs.items()},
                 })
-                st.success("✨ Hasil analisis berhasil disimpan ke riwayat Dashboard!")
+                st.success(f"✨ Tersimpan dengan kode unik **{new_code}**. Cari kode ini di menu Customer Detail untuk melihat detailnya.")
 
     with col2:
         # Validasi DINAMIS sesuai input saat ini
@@ -529,6 +659,36 @@ elif clean_menu == "Prediction":
                 </div>
             </div>
         """), unsafe_allow_html=True)
+
+# ======================= CUSTOMER DETAIL =======================
+elif clean_menu == "Customer Detail":
+    st.markdown("<h2 style='margin-bottom: 0;'>🔍 Customer Detail</h2>", unsafe_allow_html=True)
+    st.caption("Cari customer lewat kode uniknya untuk melihat semua kriteria yang diinput.")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if total_analyses == 0:
+        st.info("Belum ada data. Lakukan prediksi di menu Prediction terlebih dahulu.")
+        st.stop()
+
+    f_col, d_col = st.columns([1, 1.6], gap="large")
+
+    with f_col:
+        all_cases = [item["case"] for item in reversed(history)]
+        # selectbox = kotak pencarian live: daftar kode menyaring otomatis tiap huruf diketik
+        picked_case = st.selectbox(
+            "🔎 Cari berdasarkan kode unik",
+            all_cases,
+            index=None,
+            placeholder="Ketik kode, Contoh:RG-718",
+            key="detail_case_select",
+        )
+        st.caption(f"{len(all_cases)} kasus tersimpan. Ketik sebagian kode, lalu klik kode yang muncul.")
+
+    with d_col:
+        if picked_case:
+            _render_detail(next(it for it in history if it["case"] == picked_case))
+        else:
+            st.info("Ketik atau pilih kode unik di kolom pencarian untuk melihat detail customer.")
 
 # ======================= MODEL INSIGHT =======================
 elif clean_menu == "Model Insight":
