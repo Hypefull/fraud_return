@@ -1,0 +1,194 @@
+{
+  "generated_at": "2026-11-07T12:41:55",
+  "source": {
+    "mode": "retrain_clone",
+    "dataset": "ecommerce_return_abuse_dataset.csv"
+  },
+  "dataset": {
+    "n_rows": 60000,
+    "n_train": 48000,
+    "n_test": 12000,
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratified": true,
+    "class_counts_train": {
+      "Legitimate": 33648,
+      "Policy Abuser": 5754,
+      "Fraudulent Return": 4889,
+      "Wardrobing": 3709
+    },
+    "class_counts_test": {
+      "Legitimate": 8412,
+      "Policy Abuser": 1438,
+      "Fraudulent Return": 1223,
+      "Wardrobing": 927
+    }
+  },
+  "model": {
+    "type": "RandomForestClassifier",
+    "params": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": null,
+      "criterion": "gini",
+      "max_depth": null,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 1,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 100,
+      "n_jobs": null,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    }
+  },
+  "overall": {
+    "accuracy": 0.9995833333333334,
+    "balanced_accuracy": 0.9990349025450367,
+    "macro_precision": 0.998878827603371,
+    "macro_recall": 0.9990349025450367,
+    "macro_f1": 0.9989563536888091,
+    "weighted_f1": 0.9995832512589283,
+    "mcc": 0.9991282152029586,
+    "log_loss": 0.003168876068372273,
+    "roc_auc_ovr_macro": 0.9999931038866678,
+    "majority_baseline_accuracy": 0.701,
+    "train_accuracy": 1.0,
+    "train_macro_f1": 1.0
+  },
+  "per_class": {
+    "Fraudulent Return": {
+      "precision": 0.9983673469387755,
+      "recall": 1.0,
+      "f1": 0.9991830065359477,
+      "support": 1223,
+      "roc_auc": 0.9999965099351902,
+      "avg_precision": 0.9999676730833699
+    },
+    "Legitimate": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 8412,
+      "roc_auc": 1.0,
+      "avg_precision": 1.0
+    },
+    "Policy Abuser": {
+      "precision": 0.9993031358885017,
+      "recall": 0.9972183588317107,
+      "f1": 0.998259658893143,
+      "support": 1438,
+      "roc_auc": 0.9999845274172849,
+      "avg_precision": 0.9998790447210836
+    },
+    "Wardrobing": {
+      "precision": 0.9978448275862069,
+      "recall": 0.9989212513484358,
+      "f1": 0.9983827493261456,
+      "support": 927,
+      "roc_auc": 0.9999913781941964,
+      "avg_precision": 0.9998748972839206
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "Fraudulent Return",
+      "Legitimate",
+      "Policy Abuser",
+      "Wardrobing"
+    ],
+    "matrix": [
+      [
+        1223,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        8412,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        1434,
+        2
+      ],
+      [
+        0,
+        0,
+        1,
+        926
+      ]
+    ]
+  },
+  "binary": {
+    "tp": 3588,
+    "fp": 0,
+    "tn": 8412,
+    "fn": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.0,
+    "roc_auc": 1.0,
+    "f1": 1.0
+  },
+  "cv": {
+    "folds": 5,
+    "accuracy_mean": 0.9993125,
+    "accuracy_std": 0.00033978138396457025,
+    "macro_f1_mean": 0.998318974579395,
+    "macro_f1_std": 0.0008173449002869382
+  },
+  "permutation_importance": {
+    "return_rate_pct": {
+      "mean": 0.18825745922399298,
+      "std": 0.0003949233285619112
+    },
+    "total_returns_lifetime": {
+      "mean": 0.0014977600992047036,
+      "std": 0.0006774666500689251
+    },
+    "customer_support_contacts": {
+      "mean": 0.008213607892622399,
+      "std": 0.0006078742938332095
+    },
+    "days_to_return": {
+      "mean": 0.25733027131951836,
+      "std": 0.00880783102932227
+    },
+    "previous_dispute_count": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "wishlist_to_cart_time_hrs": {
+      "mean": 0.2917456809338865,
+      "std": 0.0032739114472797497
+    },
+    "tracking_number_valid": {
+      "mean": 0.00011351425266883374,
+      "std": 0.00015135046028996784
+    },
+    "refund_amount_requested_usd": {
+      "mean": 0.00975710348553358,
+      "std": 0.0007787858933382731
+    },
+    "avg_order_value_usd": {
+      "mean": 0.0002529799060235316,
+      "std": 0.00016146824297590983
+    },
+    "total_orders_lifetime": {
+      "mean": 0.006330860611214129,
+      "std": 0.0009294639864765405
+    }
+  }
+}
