@@ -79,6 +79,20 @@ def load_metrics():
 model, model_error = load_model()
 
 
+def detect_theme() -> str:
+    """'light' atau 'dark' sesuai tema Streamlit yang aktif (termasuk mode System)."""
+    try:
+        t = st.context.theme.type  # Streamlit >= 1.46
+        if t in ("light", "dark"):
+            return t
+    except Exception:
+        pass
+    return "dark" if st.get_option("theme.base") == "dark" else "light"
+
+
+IS_DARK = detect_theme() == "dark"
+
+
 def predict_case(features: dict):
     """Jalankan model -> (label, confidence, {kelas: probabilitas})"""
     X = pd.DataFrame([features])[list(model.feature_names_in_)]  # urutan kolom harus sama dengan saat training
@@ -503,6 +517,217 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--brand-ink); }
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------- THEME LAYER (light / dark / system) -----------------
+# Harus setelah blok CSS utama supaya menimpa aturan lama.
+LIGHT_TOKENS = """
+:root {
+    color-scheme: light;
+    --line-soft:#f1f5f9; --line-hover:#dbe1ee; --track:rgba(15,23,42,.08);
+    --ok-line:#bbf7d0; --bad-line:#fecaca; --warn-line:#fde68a; --info-line:#bfdbfe;
+    --btn-off-bg:#cbd5e1; --btn-off-fg:#64748b;
+
+    --side-bg:linear-gradient(180deg,#ffffff 0%,#f3f5fb 100%); --side-line:#e6eaf2;
+    --side-ink:#0f172a; --side-muted:#64748b;
+    --side-item:#475569; --side-item-bg:rgba(15,23,42,.03);
+    --side-hover-bg:#eef2ff; --side-hover-line:rgba(99,102,241,.4); --side-hover-ink:#4338ca;
+
+    --rate-bg:linear-gradient(135deg,#ffffff 0%,#f8fafc 100%); --rate-line:#e6eaf2;
+    --rate-foot:#64748b; --rate-track:rgba(15,23,42,.10);
+
+    --val-bg:#ffffff; --val-line:#e6eaf2; --val-ink:#0f172a;
+    --val-note:#64748b; --val-note-line:#e6eaf2;
+    --val-ok-bg:#dcfce7;  --val-ok-fg:#166534;
+    --val-bad-bg:#fee2e2; --val-bad-fg:#991b1b;
+    --pill-ok-bg:#dcfce7; --pill-ok-fg:#166534;
+    --pill-bad-bg:#fee2e2; --pill-bad-fg:#991b1b;
+}
+"""
+
+DARK_TOKENS = """
+:root {
+    color-scheme: dark;
+    --ink:#e8ecf6; --ink-2:#c5cde0; --muted:#9aa7be; --faint:#7d8aa3;
+    --line:#24314a; --surface:#111a2e; --surface-2:#18233b; --page:#0a1020;
+    --brand-soft:rgba(99,102,241,.22); --brand-ink:#a5b4fc;
+    --ok-soft:rgba(22,163,74,.18);   --ok-ink:#86efac;
+    --bad-soft:rgba(220,38,38,.18);  --bad-ink:#fca5a5;
+    --warn-soft:rgba(217,119,6,.20); --warn-ink:#fcd34d;
+    --info-soft:rgba(37,99,235,.20); --info-ink:#93c5fd;
+    --line-soft:#1b2740; --line-hover:#344563; --track:rgba(148,163,184,.22);
+    --ok-line:rgba(22,163,74,.4); --bad-line:rgba(220,38,38,.4);
+    --warn-line:rgba(217,119,6,.45); --info-line:rgba(37,99,235,.45);
+    --btn-off-bg:#273349; --btn-off-fg:#7d8aa3;
+
+    --side-bg:linear-gradient(180deg,#0b1626 0%,#12213a 100%); --side-line:#25395c;
+    --side-ink:#ffffff; --side-muted:#94a3b8;
+    --side-item:#a8b5cb; --side-item-bg:rgba(255,255,255,.03);
+    --side-hover-bg:rgba(99,102,241,.14); --side-hover-line:rgba(99,102,241,.45); --side-hover-ink:#ffffff;
+
+    --rate-bg:linear-gradient(135deg,#12213a 0%,#1b2d4d 100%); --rate-line:#25395c;
+    --rate-foot:#9fb0c8; --rate-track:rgba(148,163,184,.2);
+
+    --val-bg:linear-gradient(160deg,#111827 0%,#0f172a 100%); --val-line:#1f2937; --val-ink:#ffffff;
+    --val-note:#9ca3af; --val-note-line:#374151;
+    --val-ok-bg:rgba(16,185,129,.10);  --val-ok-fg:#d1fae5;
+    --val-bad-bg:rgba(239,68,68,.14);  --val-bad-fg:#fecaca;
+    --pill-ok-bg:#064e3b; --pill-ok-fg:#6ee7b7;
+    --pill-bad-bg:#7f1d1d; --pill-bad-fg:#fca5a5;
+}
+"""
+
+THEME_RULES = """
+/* ---- page & teks dasar ---- */
+.stApp, [data-testid="stAppViewContainer"] { background: var(--page) !important; }
+.stApp, .stApp [data-testid="stMarkdownContainer"] { color: var(--ink); }
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: var(--muted) !important; }
+[data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label { color: var(--muted) !important; }
+[data-testid="stTooltipIcon"] svg { color: var(--faint) !important; }
+
+/* ---- SIDEBAR (ikut tema) ---- */
+[data-testid="stSidebar"] { background: var(--side-bg) !important; border-right: 1px solid var(--side-line) !important; }
+[data-testid="stSidebar"] svg { color: var(--side-muted) !important; fill: var(--side-muted); }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] { color: var(--side-ink); }
+[data-testid="stSidebar"] div[role="radiogroup"] > label { background: var(--side-item-bg); color: var(--side-item); }
+[data-testid="stSidebar"] div[role="radiogroup"] > label:hover { background: var(--side-hover-bg); border-color: var(--side-hover-line); color: var(--side-hover-ink); }
+[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) svg { fill: #fff; color: #fff !important; }
+
+/* ---- input angka & selectbox ---- */
+[data-baseweb="input"] { background: var(--surface) !important; border: 1px solid var(--line) !important; }
+[data-baseweb="base-input"] { background: transparent !important; }
+[data-baseweb="input"] input, [data-baseweb="base-input"] input, [data-baseweb="select"] input {
+    color: var(--ink) !important; -webkit-text-fill-color: var(--ink) !important;
+    caret-color: var(--brand); background: transparent !important;
+}
+input::placeholder { color: var(--faint) !important; -webkit-text-fill-color: var(--faint) !important; opacity: 1; }
+[data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] { background: var(--surface-2) !important; color: var(--ink) !important; }
+[data-testid="stNumberInputStepDown"]:hover, [data-testid="stNumberInputStepUp"]:hover { background: var(--brand-soft) !important; }
+[data-baseweb="select"] > div { background: var(--surface) !important; border: 1px solid var(--line) !important; }
+[data-baseweb="select"] * { color: var(--ink) !important; }
+[data-baseweb="select"] svg { fill: var(--muted) !important; }
+[data-baseweb="input"]:focus-within, [data-baseweb="select"] > div:focus-within {
+    border-color: var(--brand) !important; box-shadow: 0 0 0 3px rgba(99,102,241,.25) !important;
+}
+
+/* ---- dropdown / popover ---- */
+[data-baseweb="popover"] > div, [data-baseweb="popover"] ul { background: var(--surface) !important; color: var(--ink) !important; }
+[data-baseweb="popover"] ul { border: 1px solid var(--line); }
+[data-baseweb="popover"] li, [data-baseweb="popover"] li * { background: transparent !important; color: var(--ink) !important; }
+[data-baseweb="popover"] li:hover, [data-baseweb="popover"] li[aria-selected="true"] { background: var(--brand-soft) !important; }
+
+/* ---- tombol nonaktif ---- */
+.stButton > button:disabled { background: var(--btn-off-bg) !important; color: var(--btn-off-fg) !important; }
+
+/* ---- DERIVED RETURN RATE CARD (ikut tema) ---- */
+.rate-card { background: var(--rate-bg) !important; border-color: var(--rate-line) !important; border-left-color: var(--c) !important; }
+.rate-bar-bg { background: var(--rate-track) !important; }
+.rate-foot { color: var(--rate-foot) !important; }
+
+/* ---- VALIDATION PANEL (ikut tema) ---- */
+.val-card { background: var(--val-bg) !important; border: 1px solid var(--val-line) !important; color: var(--val-ink) !important; }
+.val-title { color: var(--val-ink) !important; }
+.val-note { color: var(--val-note) !important; border-top-color: var(--val-note-line) !important; }
+.val-ok  { background: var(--val-ok-bg) !important;  color: var(--val-ok-fg) !important; }
+.val-bad { background: var(--val-bad-bg) !important; color: var(--val-bad-fg) !important; }
+.pill-ok  { background: var(--pill-ok-bg) !important;  color: var(--pill-ok-fg) !important; }
+.pill-bad { background: var(--pill-bad-bg) !important; color: var(--pill-bad-fg) !important; }
+
+/* ---- komponen buatan sendiri ---- */
+.dashboard-card:hover { border-color: var(--line-hover); }
+.hist-row, .tbl td { border-bottom-color: var(--line-soft); }
+.prob-bg, .bar-bg { background: var(--track) !important; }
+.badge-table-fraud { color: var(--bad-ink); }
+.high-risk-box { background: var(--bad-soft); border: 1px solid var(--bad-line); border-left: 5px solid var(--bad); color: var(--bad-ink); }
+.low-risk-box  { background: var(--ok-soft);  border: 1px solid var(--ok-line);  border-left: 5px solid var(--ok);  color: var(--ok-ink); }
+.callout-info { border-color: var(--info-line); }
+.callout-warn { border-color: var(--warn-line); }
+.callout-ok   { border-color: var(--ok-line); }
+.callout-bad  { border-color: var(--bad-line); }
+
+/* ---- SVG trend chart ---- */
+.rg-grid { stroke: var(--line); }
+.rg-axis { fill: var(--faint); }
+.rg-dot  { stroke: var(--surface); }
+"""
+
+st.markdown(
+    "<style>" + h(DARK_TOKENS if IS_DARK else LIGHT_TOKENS) + " " + h(THEME_RULES) + "</style>",
+    unsafe_allow_html=True,
+)
+
+# ----------------- NAVIGATION (sidebar) STYLE -----------------
+NAV_TOKENS = (
+    "--nav-card:rgba(255,255,255,.05); --nav-hover:rgba(99,102,241,.16); --nav-shadow:0 10px 24px rgba(0,0,0,.35);"
+    if IS_DARK else
+    "--nav-card:#ffffff; --nav-hover:#eef2ff; --nav-shadow:0 8px 20px rgba(99,102,241,.12);"
+)
+
+NAV_CSS = """
+:root { %s }
+
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding: 1.1rem 1rem 1.5rem 1rem; }
+
+/* ---- brand card ---- */
+.nav-brand {
+    display: flex; align-items: center; gap: 12px; padding: 14px;
+    background: var(--nav-card); border: 1px solid var(--side-line);
+    border-radius: 16px; box-shadow: var(--nav-shadow);
+}
+.nav-logo {
+    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
+    background: linear-gradient(135deg, #6366f1 0%%, #7c3aed 100%%);
+    box-shadow: 0 6px 16px rgba(99,102,241,.45);
+}
+.nav-name { font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--side-ink); line-height: 1.1; }
+.nav-tag  { font-size: 11.5px; color: var(--side-muted); margin-top: 3px; }
+.nav-label {
+    font-size: 10.5px; font-weight: 800; letter-spacing: .14em; color: var(--side-muted);
+    margin: 26px 0 10px 8px;
+}
+
+/* ---- nav items ---- */
+[data-testid="stSidebar"] div[role="radiogroup"] { gap: 6px !important; }
+[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    position: relative; overflow: hidden;
+    padding: 13px 16px !important; border-radius: 14px !important;
+    background: transparent !important; border: 1px solid transparent !important;
+    color: var(--side-item) !important;
+}
+[data-testid="stSidebar"] div[role="radiogroup"] > label p {
+    font-size: 14.5px !important; font-weight: 600 !important; letter-spacing: .005em;
+}
+[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+    background: var(--nav-hover) !important; border-color: var(--side-hover-line) !important;
+    color: var(--side-hover-ink) !important; transform: translateX(4px);
+}
+/* active item */
+[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+    background: linear-gradient(135deg, #6366f1 0%%, #7c3aed 100%%) !important;
+    border-color: rgba(255,255,255,.22) !important; color: #fff !important;
+    box-shadow: 0 8px 20px rgba(99,102,241,.40); transform: none;
+}
+[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked):hover { color: #fff !important; transform: none; }
+[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked)::after {
+    content: ""; position: absolute; right: 16px; top: 50%%; width: 7px; height: 7px;
+    border-radius: 50%%; background: #fff; transform: translateY(-50%%);
+    box-shadow: 0 0 0 4px rgba(255,255,255,.25);
+}
+
+/* ---- status card ---- */
+.nav-foot {
+    margin-top: 28px; padding: 14px; border-radius: 16px;
+    background: var(--nav-card); border: 1px solid var(--side-line);
+}
+.nav-foot-title { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; color: var(--side-muted); margin-bottom: 10px; }
+.nav-stat { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--side-item); padding: 4px 0; }
+.nav-stat b { color: var(--side-ink); font-variant-numeric: tabular-nums; }
+.nav-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%%; margin-right: 8px; }
+.nav-dot.on  { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.25); }
+.nav-dot.off { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.25); }
+""" % NAV_TOKENS
+
+st.markdown("<style>" + h(NAV_CSS) + "</style>", unsafe_allow_html=True)
+
 # ----------------- Session State -----------------
 if "history_predictions" not in st.session_state:
     st.session_state.history_predictions = []
@@ -552,7 +777,7 @@ def confusion_html(labels, matrix):
             frac = v / total
             alpha = 0.06 + 0.85 * frac
             base = "79,70,229" if i == j else "220,38,38"
-            fg = "#fff" if alpha > 0.5 else "#0f172a"
+            fg = "#fff" if alpha > 0.5 else "var(--ink)"
             cells += (f'<td style="background:rgba({base},{alpha:.2f}); color:{fg};">{v:,}'
                       f'<small>{frac*100:.1f}% baris</small></td>')
         rows += f'<tr><th class="rowh">{labels[i]}</th>{cells}</tr>'
@@ -606,11 +831,14 @@ def _render_detail(item: dict):
 # ----------------- SIDEBAR -----------------
 with st.sidebar:
     st.markdown(h("""
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2px;">
-            <div style="background: linear-gradient(135deg,#6366f1,#7c3aed); padding: 7px 11px; border-radius: 12px; color: white; font-size: 16px; box-shadow: 0 6px 16px rgba(99,102,241,.4);">🔄</div>
-            <span style="color: white; font-size: 20px; font-weight: 800; letter-spacing: -.02em;">ReturnGuard</span>
+        <div class="nav-brand">
+            <div class="nav-logo">🔄</div>
+            <div>
+                <div class="nav-name">ReturnGuard</div>
+                <div class="nav-tag">AI return-risk checker</div>
+            </div>
         </div>
-        <p style="color: #94a3b8; font-size: 12px; margin-left: 2px; margin-bottom: 25px;">AI return-risk checker</p>
+        <div class="nav-label">MENU</div>
     """), unsafe_allow_html=True)
 
     selected_menu = st.radio(
@@ -619,6 +847,18 @@ with st.sidebar:
         index=0,
         label_visibility="collapsed",
     )
+
+    _model_ok = model is not None
+    st.markdown(h(f"""
+        <div class="nav-foot">
+            <div class="nav-foot-title">STATUS</div>
+            <div class="nav-stat">
+                <span><span class="nav-dot {'on' if _model_ok else 'off'}"></span>Model</span>
+                <b>{'Loaded' if _model_ok else 'Missing'}</b>
+            </div>
+            <div class="nav-stat"><span>Analyses this session</span><b>{len(history)}</b></div>
+        </div>
+    """), unsafe_allow_html=True)
 
 clean_menu = selected_menu.split(" ", 1)[1]
 
@@ -698,7 +938,7 @@ if clean_menu == "Home":
         class_rows = "".join(
             f'<div style="display:flex; gap:10px; margin-bottom:10px;">'
             f'<span style="width:10px; height:10px; border-radius:50%; background:{v["color"]}; margin-top:5px; flex-shrink:0;"></span>'
-            f'<div style="font-size:13px; line-height:1.5;"><b>{k}</b><br><span style="color:#64748b;">{v["desc"]}</span></div></div>'
+            f'<div style="font-size:13px; line-height:1.5;"><b>{k}</b><br><span style="color:var(--muted);">{v["desc"]}</span></div></div>'
             for k, v in CLASS_INFO.items()
         )
         st.markdown(h(f"""
@@ -887,15 +1127,15 @@ elif clean_menu == "Dashboard":
         grid = ""
         for v in (0, 25, 50, 75, 100):
             y = y_of(v)
-            grid += (f'<line x1="{PAD}" y1="{y}" x2="{W-14}" y2="{y}" stroke="#e2e8f0" stroke-width="1"/>'
-                     f'<text x="{PAD-8}" y="{y+4}" font-size="10" fill="#94a3b8" text-anchor="end">{v}%</text>')
+            grid += (f'<line class="rg-grid" x1="{PAD}" y1="{y}" x2="{W-14}" y2="{y}" stroke="#e2e8f0" stroke-width="1"/>'
+                     f'<text class="rg-axis" x="{PAD-8}" y="{y+4}" font-size="10" fill="#94a3b8" text-anchor="end">{v}%</text>')
 
         thr_y = y_of(60)
         grid += (f'<line x1="{PAD}" y1="{thr_y}" x2="{W-14}" y2="{thr_y}" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 4"/>'
                  f'<text x="{W-16}" y="{thr_y-5}" font-size="10" fill="#d97706" text-anchor="end">Threshold 60%</text>')
 
         if total_analyses == 0:
-            body = (f'<text x="{W/2}" y="{H/2}" font-size="13" fill="#94a3b8" text-anchor="middle">'
+            body = (f'<text class="rg-axis" x="{W/2}" y="{H/2}" font-size="13" fill="#94a3b8" text-anchor="middle">'
                     f'Belum ada data. Lakukan prediksi untuk melihat tren.</text>')
         else:
             n = total_analyses
@@ -911,7 +1151,7 @@ elif clean_menu == "Dashboard":
                 body += f'<polyline points="{path}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>'
             for x, y, item in pts:
                 c = "#dc2626" if item["result"] == "Fraudulent" else "#16a34a"
-                body += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{c}" stroke="#fff" stroke-width="2"/>'
+                body += f'<circle class="rg-dot" cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{c}" stroke="#fff" stroke-width="2"/>'
 
         st.markdown(h(f"""
             <div class="dashboard-card">
@@ -951,7 +1191,7 @@ elif clean_menu == "Dashboard":
                         </div>
                         <div class="mix-row">
                             <div class="mix-row-top">
-                                <span style="color:#166534;">🟢 Non-Fraud<small>({non_fraud_count})</small></span>
+                                <span style="color:var(--ok-ink);">🟢 Non-Fraud<small>({non_fraud_count})</small></span>
                                 <span>{non_fraud_rate:.1f}%</span>
                             </div>
                             <div class="bar-bg" style="background:#dcfce7;"><div class="bar-fill" style="width:{non_fraud_rate:.1f}%; background:#16a34a;"></div></div>
@@ -1099,8 +1339,12 @@ elif clean_menu == "Prediction":
         # ---- Derived return rate ----
         return_rate = (total_returns / total_orders) * 100 if total_orders > 0 else 0.0
         is_high = return_rate >= 60.0
-        r_color = "#f87171" if is_high else "#34d399"
-        r_bg = "rgba(248,113,113,.15)" if is_high else "rgba(52,211,153,.15)"
+        if IS_DARK:
+            r_color = "#f87171" if is_high else "#34d399"
+            r_bg = "rgba(248,113,113,.15)" if is_high else "rgba(52,211,153,.15)"
+        else:
+            r_color = "#dc2626" if is_high else "#16a34a"
+            r_bg = "rgba(220,38,38,.10)" if is_high else "rgba(22,163,74,.10)"
         r_status = "⚠️ HIGH" if is_high else "✅ NORMAL"
 
         st.markdown(h(f"""
