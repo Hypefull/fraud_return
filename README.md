@@ -1,4 +1,4 @@
-ReturnGuard — AI Return-Risk Checker
+# ReturnGuard — AI Return-Risk Checker
 
 ReturnGuard is a Streamlit app that classifies e-commerce return requests to help spot return abuse early. A Random Forest model reads the details of a return and labels it as one of four classes:
 
