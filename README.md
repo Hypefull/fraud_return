@@ -9,14 +9,12 @@ ReturnGuard is a Streamlit app that classifies e-commerce return requests to hel
 | **Policy Abuser** | A customer who repeatedly exploits return-policy loopholes |
 | **Wardrobing** | Buying an item, using it, then returning it |
 
-> The app interface is in Indonesian.
-
 ## Features
 
-- **Home** — project overview and tech stack
+- **Home** — project overview and tech stack.
 - **Dashboard** — summary of the analyses run in the current session
 - **Prediction** — enter the customer and return details and get an instant risk classification
-- **Customer Detail** — inspect the features behind an individual analysis
+- **Customer Detail** — inspect the features and data behind an individual analysis
 - **Model Insight** — dataset split, performance metrics, confusion matrix, cross-validation, and permutation importance, read from `model_metrics.json`
 
 ## Tech Stack
@@ -65,7 +63,7 @@ The app opens at `http://localhost:8501`. Keep the `.joblib` model file in the s
 - **Split:** 80% train / 20% test (48,000 / 12,000), stratified, `random_state=42`
 - **Test performance:** accuracy ≈ 99.96%, macro F1 ≈ 0.999
 
-These near-perfect scores most likely reflect how clean and separable the dataset is (it appears to be synthetic), so real-world performance on messy production data should be expected to be lower.
+These near-perfect scores most likely reflect how clean and separable the dataset due to the fact the dataset used to train the model is synthetic, so real-world performance on messy production data should be expected to be lower.
 
 ## Updating the Metrics
 
@@ -79,6 +77,6 @@ python evaluate_model.py --use-saved          # evaluate the saved joblib (same 
 
 Without `--csv`, the script downloads the dataset from Hugging Face, which needs `pip install datasets`.
 
-## Author
+## Limitations
 
-Built by [Hypefull](https://github.com/Hypefull).
+
