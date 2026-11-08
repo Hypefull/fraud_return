@@ -9,6 +9,10 @@ ReturnGuard is a Streamlit app that classifies e-commerce return requests to hel
 | **Policy Abuser** | A customer who repeatedly exploits return-policy loopholes |
 | **Wardrobing** | Buying an item, using it, then returning it |
 
+## Live Demo
+
+🔗 **Try it here:** [PASTE YOUR STREAMLIT APP LINK HERE](https://your-app-name.streamlit.app)
+
 ## Features
 
 - **Home** — project overview and tech stack.
@@ -63,7 +67,7 @@ The app opens at `http://localhost:8501`. Keep the `.joblib` model file in the s
 - **Split:** 80% train / 20% test (48,000 / 12,000), stratified, `random_state=42`
 - **Test performance:** accuracy ≈ 99.96%, macro F1 ≈ 0.999
 
-These near-perfect scores most likely reflect how clean and separable the dataset due to the fact the dataset used to train the model is synthetic, so real-world performance on messy production data should be expected to be lower.
+These near-perfect scores most likely reflect how clean and separable the data is, since the dataset used to train the model is synthetic. Real-world performance on messy production data should be expected to be lower.
 
 ## Updating the Metrics
 
@@ -79,4 +83,10 @@ Without `--csv`, the script downloads the dataset from Hugging Face, which needs
 
 ## Limitations
 
-
+- **Synthetic training data.** The model was trained on a synthetic dataset, not real store transactions. Its patterns are cleaner than real-world fraud, so the reported ~99.96% accuracy should not be read as production performance.
+- **Possible overfitting.** The model scores 100% on its own training data, and the metrics page evaluates a retrained clone of the model by default rather than the saved file itself. Treat the numbers as indicative, not as a guarantee.
+- **Class imbalance.** About 70% of the data is Legitimate returns, while Fraudulent Return, Policy Abuser, and Wardrobing are much rarer. Minority-class behavior may differ on real data.
+- **Decision support only.** A prediction is a risk signal, not proof of fraud. It should not be used to automatically deny refunds or penalize customers without human review.
+- **Fairness and bias.** The input features include demographic and location details such as age and country. These can introduce unfair bias if used in real decisions and should be audited first.
+- **Fixed features and categories.** The model expects the exact feature set and column order it was trained on, and unseen categories (new countries, payment methods, or product types) may be handled poorly.
+- **Session-only history.** The Dashboard and Customer Detail pages only reflect analyses made during the current session. Nothing is saved to a database.
