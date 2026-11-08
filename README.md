@@ -11,7 +11,7 @@ ReturnGuard is a Streamlit app that classifies e-commerce return requests to hel
 
 ## Demo
 
-🔗 **Try it here:** [Streamlit](https://your-app-name.streamlit.app)
+🔗 **Try it here:** [Streamlit App](https://your-app-name.streamlit.app)
 
 ## Features
 
@@ -29,11 +29,14 @@ Python · Streamlit · scikit-learn · pandas · joblib
 
 ```
 .
-├── main.py                                  # Streamlit app (all pages)
-├── evaluate_model.py                        # Computes metrics -> model_metrics.json
-├── model_metrics.json                       # Metrics shown on the Model Insight page
-├── return_abuse_detector_model.joblib       # Trained RandomForestClassifier
-├── ecommerce_return_abuse_dataset.csv       # Dataset (60,000 rows)
+├── Streamlit/
+│   ├── main.py                              # Streamlit app (all pages)
+│   ├── evaluate_model.py                    # Computes metrics -> model_metrics.json
+│   ├── model_metrics.json                   # Metrics shown on the Model Insight page
+│   ├── return_abuse_detector_model.joblib   # Trained RandomForestClassifier
+│   └── ecommerce_return_abuse_dataset.csv   # Dataset (60,000 rows)
+├── fraud_return_model.ipynb                 # Notebook with the model training code
+├── Legacy_main.py                           # Old version of main.py (kept for reference)
 ├── requirements.txt
 └── README.md
 ```
@@ -53,10 +56,10 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Run
-streamlit run main.py
+streamlit run Streamlit/main.py
 ```
 
-The app opens at `http://localhost:8501`. Keep the `.joblib` model file in the same folder as `main.py`.
+The app opens at `http://localhost:8501`. Keep the `.joblib` model file in the same folder as `main.py` (the `Streamlit/` folder).
 
 > **Note:** `scikit-learn` is pinned to `1.6.1` because that is the version the model was saved with. Other versions can show warnings or produce invalid results when unpickling.
 
@@ -74,6 +77,7 @@ These near-perfect scores most likely reflect how clean and separable the data i
 To recompute the numbers shown on the Model Insight page:
 
 ```bash
+cd Streamlit
 python evaluate_model.py                      # retrain a clone on 80% and test on 20%
 python evaluate_model.py --csv ecommerce_return_abuse_dataset.csv
 python evaluate_model.py --use-saved          # evaluate the saved joblib (same split settings required)
@@ -96,4 +100,4 @@ Without `--csv`, the script downloads the dataset from Hugging Face, which needs
 * Dataset: Sarvesh Chhetri, [E-commerce Return Abuse Detection Dataset](https://huggingface.co/datasets/sarveshchhetri/E-commerce_return_abuse_detection_dataset) (Hugging Face).
 * Icons: [Devicon](https://devicon.dev/) (MIT) and [Simple Icons](https://simpleicons.org/) (CC0). Font: [Inter](https://rsms.me/inter/) (SIL Open Font License).
 * Built with: [Streamlit](https://streamlit.io/), [scikit-learn](https://scikit-learn.org/), [pandas](https://pandas.pydata.org/), and [joblib](https://joblib.readthedocs.io/).
-* Author: Kelompok 5, Bunda Mulia University
+* Author: Kelompok 5, Bunda Mulia University.
