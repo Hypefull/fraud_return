@@ -11,7 +11,7 @@ ReturnGuard is a Streamlit app that classifies e-commerce return requests to hel
 
 ## Live Demo
 
-🔗 **Try it here:** [PASTE YOUR STREAMLIT APP LINK HERE](https://your-app-name.streamlit.app)
+🔗 **Try it here:** [Streamlit](https://your-app-name.streamlit.app)
 
 ## Features
 
