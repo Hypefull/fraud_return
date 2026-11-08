@@ -9,7 +9,7 @@ ReturnGuard is a Streamlit app that classifies e-commerce return requests to hel
 | **Policy Abuser** | A customer who repeatedly exploits return-policy loopholes |
 | **Wardrobing** | Buying an item, using it, then returning it |
 
-## Live Demo
+## Demo
 
 🔗 **Try it here:** [Streamlit](https://your-app-name.streamlit.app)
 
@@ -90,3 +90,10 @@ Without `--csv`, the script downloads the dataset from Hugging Face, which needs
 - **Fairness and bias.** The input features include demographic and location details such as age and country. These can introduce unfair bias if used in real decisions and should be audited first.
 - **Fixed features and categories.** The model expects the exact feature set and column order it was trained on, and unseen categories (new countries, payment methods, or product types) may be handled poorly.
 - **Session-only history.** The Dashboard and Customer Detail pages only reflect analyses made during the current session. Nothing is saved to a database.
+
+## Credits
+
+* Dataset: Sarvesh Chhetri, [E-commerce Return Abuse Detection Dataset](https://huggingface.co/datasets/sarveshchhetri/E-commerce_return_abuse_detection_dataset) (Hugging Face).
+* Icons: [Devicon](https://devicon.dev/) (MIT) and [Simple Icons](https://simpleicons.org/) (CC0). Font: [Inter](https://rsms.me/inter/) (SIL Open Font License).
+* Built with: [Streamlit](https://streamlit.io/), [scikit-learn](https://scikit-learn.org/), [pandas](https://pandas.pydata.org/), and [joblib](https://joblib.readthedocs.io/).
+* Author: Kelompok 5, Bunda Mulia University
