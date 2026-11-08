@@ -682,9 +682,13 @@ NAV_CSS = """
 }
 .nav-logo {
     width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
+    display: flex; align-items: center; justify-content: center; color: #fff;
     background: linear-gradient(135deg, #6366f1 0%%, #7c3aed 100%%);
     box-shadow: 0 6px 16px rgba(99,102,241,.45);
+}
+.nav-logo svg {
+    width: 25px; height: 25px; display: block;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.16));
 }
 .nav-name { font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--side-ink); line-height: 1.1; }
 .nav-tag  { font-size: 11.5px; color: var(--side-muted); margin-top: 3px; }
@@ -840,7 +844,14 @@ def _render_detail(item: dict):
 with st.sidebar:
     st.markdown(h("""
         <div class="nav-brand">
-            <div class="nav-logo">🔄</div>
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M20 7.5A8.5 8.5 0 0 0 5.1 5.1L3.5 6.7" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3.5 3.8V6.7H6.4" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4 16.5A8.5 8.5 0 0 0 18.9 18.9l1.6-1.6" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20.5 20.2V17.3H17.6" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <div>
                 <div class="nav-name">ReturnGuard</div>
                 <div class="nav-tag">AI return-risk checker</div>
