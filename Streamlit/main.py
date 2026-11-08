@@ -296,23 +296,28 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--brand-ink); }
 /* =====================================================
    DASHBOARD: PREDICTION MIX
    ===================================================== */
-.mix-body { display: flex; align-items: center; gap: 22px; margin: 6px 0 20px 0; }
-.donut { width: 120px; height: 120px; border-radius: 50%; position: relative; flex-shrink: 0; }
+.mix-body {
+    display: grid; grid-template-columns: 108px minmax(0, 1fr);
+    align-items: center; column-gap: 14px; margin: 6px 0 18px 0;
+}
+.donut { width: 108px; height: 108px; border-radius: 50%; position: relative; flex-shrink: 0; }
 .donut-hole {
-    position: absolute; inset: 16px; background: var(--surface); border-radius: 50%;
+    position: absolute; inset: 14px; background: var(--surface); border-radius: 50%;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     box-shadow: inset 0 0 0 1px var(--line);
 }
 .donut-hole b { font-size: 22px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
 .donut-hole span { font-size: 10.5px; color: var(--faint); margin-top: 3px; }
-.mix-legend { flex: 1; min-width: 0; }
-.mix-row { margin-bottom: 14px; }
+.mix-legend { min-width: 0; width: 100%; }
+.mix-row { margin-bottom: 12px; }
 .mix-row:last-child { margin-bottom: 0; }
-.mix-row-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-.mix-row-top small { font-weight: 500; color: var(--faint); margin-left: 4px; }
-.bar-bg { width: 100%; border-radius: 8px; height: 8px; overflow: hidden; }
-.bar-fill { height: 8px; border-radius: 8px; transform-origin: left; animation: growX .7s var(--ease) both; }
-.mix-foot { font-size: 11.5px; color: var(--faint); text-align: center; padding-top: 14px; border-top: 1px dashed var(--line); }
+.mix-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.mix-row-top > span:first-child { min-width: 0; }
+.mix-row-top > span:last-child { flex-shrink: 0; white-space: nowrap; }
+.mix-row-top small { font-weight: 500; color: var(--faint); margin-left: 3px; }
+.bar-bg { width: 100%; border-radius: 8px; height: 7px; overflow: hidden; }
+.bar-fill { height: 7px; border-radius: 8px; transform-origin: left; animation: growX .7s var(--ease) both; }
+.mix-foot { font-size: 11px; color: var(--faint); text-align: center; padding-top: 12px; border-top: 1px dashed var(--line); }
 
 /* =====================================================
    DASHBOARD: HISTORY TABLE
@@ -509,7 +514,10 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--brand-ink); }
     .block-container { padding-left: 1rem; padding-right: 1rem; }
     .home-hero { padding: 30px 22px; }
     .home-title { font-size: 32px; }
-    .mix-body { flex-direction: column; align-items: flex-start; }
+    .mix-body { grid-template-columns: 96px minmax(0, 1fr); column-gap: 12px; }
+    .donut { width: 96px; height: 96px; }
+    .donut-hole { inset: 12px; }
+    .mix-row-top { font-size: 11.5px; }
     .detail-grid { grid-template-columns: 1fr; }
     .stat-value { font-size: 28px; }
     .cm td { min-width: 64px; padding: 10px 8px; }
